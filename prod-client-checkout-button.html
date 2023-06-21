@@ -1,0 +1,47 @@
+<form id="checkout-form" style="width: 300px;">
+  <label for="email" style="font-size: 18px; font-weight: bold; display: block; text-align: left;">Email:</label>
+  <input type="email" id="email" name="email" placeholder="Enter your Google email" required style="width: 100%; padding: 10px; font-size: 16px; margin-top: 10px; text-align: left;"><br>
+  <input type="submit" value="Checkout" style="width: 100%; padding: 10px; font-size: 16px; background-color: #42c3ab; color: white; border: none; cursor: pointer; margin-top: 10px;">
+</form>
+
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+  document.getElementById('checkout-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      var email = document.getElementById('email').value;
+
+      fetch('/stripe/get-publishable-key.php')
+      .then(function(response) {
+          return response.json();
+      })
+      .then(function(data) {
+          var publishableKey = data.publishableKey;
+
+          fetch('/stripe/create-checkout-session.php', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  email: email,
+                  cancelUrl: window.location.href // pass current URL
+              }),
+          })
+          .then(function(response) {
+              return response.json();
+          })
+          .then(function(session) {
+              var stripe = Stripe(publishableKey);
+              return stripe.redirectToCheckout({ sessionId: session.id });
+          })
+          .catch(function(error) {
+              console.error('Error:', error);
+          });
+      })
+      .catch(function(error) {
+          console.error('Error:', error);
+      });
+  });
+</script>
